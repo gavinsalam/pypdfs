@@ -58,7 +58,7 @@ def mom(pdf, Q, iflav, xmin = None):
 #-- send output to a file if requested
 if (cmdline.present("-out")):
     outName = cmdline.value("-out")
-    out = file(outName,'w')
+    out = open(outName,'w')
 
 #-- get basic parameters
 pdfname = cmdline.value("-pdf","NNPDF30_nnlo_as_0118")

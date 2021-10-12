@@ -127,7 +127,7 @@ def main():
     #-- send output to a file if requested
     if (cmdline.present("-out")):
         outName = cmdline.value("-out")
-        out = file(outName,'w')
+        out = open(outName,'w')
     else:
         out = sys.stdout
     
