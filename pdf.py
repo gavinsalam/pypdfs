@@ -20,6 +20,8 @@ usage="""
   -flav flav1,flav2   (use PDG codes)
   -eval 'eval-string' (e.g. "flv(1)-flv(-1)" to get d-dbar)
 
+  -a-stretch A        (default 5.0, indicates stretching of large-x region)
+
   -imem IMEM          just the given member
   -err                output the symm err
   -fullerr            output the full error info
