@@ -65,7 +65,7 @@ names = {
    22 : r"$\gamma$"
     }
 
-a_stretch = 5
+a_stretch = 5.0
 def zeta_of_x(x):
     y = log(1.0/x)
     return  y + a_stretch*(1.0 - x)
@@ -139,6 +139,8 @@ def main():
     # allow both -Q and -Q2 options
     Q=cmdline.value("-Q", 100.0)
     Q = sqrt(cmdline.value("-Q2",Q**2))
+    global a_stretch
+    a_stretch = cmdline.value("-a-stretch", a_stretch)
 
     x_from_file = cmdline.value("-x-from-file", "")
     
