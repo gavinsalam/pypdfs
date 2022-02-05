@@ -32,14 +32,12 @@ out = sys.stdout
 
 
 #----------------------------------------------------------------------
-def lumi(pdf, M, rts, iflav1, iflav2, flv_string=None, mu=None):
+def lumi(pdf, M, rts, iflav1, iflav2, flv_string=None, mu=None, dy_min = 0.1, ny_min = 100):
     if (mu is None): mu = M
     tau = (M/rts)**2
     ymax = -log(tau)
     # these settings should be accurate enough for most
     # purposes
-    dy_min = 0.1
-    ny_min = 100
     ny = max(ny_min, int(ymax/dy_min))
     dy = ymax / ny
 
@@ -136,6 +134,7 @@ rts =cmdline.value("-rts",13000)
 mass_lo = cmdline.value("-mass-lo",125.0)
 mass_hi = cmdline.value("-mass-hi",rts/2.0)
 nmass = cmdline.value("-nmass",50)
+dy_min = cmdline.value("-dy-min",0.1)
 
 #nx=cmdline.value("-nx",100)
 #Q=cmdline.value("-Q", 100.0)
@@ -188,11 +187,14 @@ if (err):
     pdfs = pdfset.mkPDFs()
     for im,mass in enumerate(masses):
         for ipdf,pdf in enumerate(pdfs):
-            resfull[im,ipdf] = norm[im] * lumi(pdf, mass, rts, flav1, flav2, flv_string, mu)
+            resfull[im,ipdf] = norm[im] * lumi(pdf, mass, rts, flav1, flav2, flv_string, mu, dy_min)
         if (medianerr):
             uncert = mypdf.intervalUncert(resfull[im,:])
         else:
             uncert = pdfset.uncertainty(resfull[im,:])
+
+        # print(np.array2string(resfull[im,:],separator=','))
+        # print(np.average(resfull[im,1:]), resfull[im,0])
 
         reserr[im,0] = uncert.central
         reserr[im,1] = uncert.errsymm
@@ -205,19 +207,19 @@ if (err):
     header += " "+lumi_description(flav1,flav2,flv_string)+" : mean_or_median errsymm".format(flav1,flav2)
     if (fullerr): header += " bandlo bandhi"
     print(header, file=out)
-    print(hfile.reformat(masses, reserr, format='{:<12.5g}'), file=out)
+    print(hfile.reformat(masses, reserr, format='{:<13.6g}'), file=out)
             
 else:
     pdf=pdfset.mkPDF(imem)
     res=np.empty([nmass])
     for im,mass in enumerate(masses):
-        res[im] = norm[im] * lumi(pdf, mass, rts, flav1, flav2, flv_string, mu)
+        res[im] = norm[im] * lumi(pdf, mass, rts, flav1, flav2, flv_string, mu, dy_min)
     
     print("# pdf = {}, imem = {}, version = {}, rts = {}".format(pdfname,imem, pdfset.dataversion, rts), file=out)
     header = "# Columns: mass"
     header += " "+lumi_description(flav1,flav2,flv_string)+": central"
     print(header, file=out)
-    print(hfile.reformat(masses, res, format='{:<12.5g}'), file=out)
+    print(hfile.reformat(masses, res, format='{:<13.6g}'), file=out)
 
 
 def printInfo():
