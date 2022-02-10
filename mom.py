@@ -61,7 +61,7 @@ if (cmdline.present("-out")):
     out = open(outName,'w')
 
 #-- get basic parameters
-pdfname = cmdline.value("-pdf","NNPDF30_nnlo_as_0118")
+pdfname = cmdline.value("-pdf","MSHT20nnlo_as118")
 #flav=cmdline.value("-flav",21)
 Q_lo = cmdline.value("-Q-lo",10.0)
 Q_hi = cmdline.value("-Q-hi",10000.0)

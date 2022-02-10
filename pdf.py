@@ -184,7 +184,7 @@ def main():
         out = sys.stdout
     
     #-- get basic parameters
-    pdfname = cmdline.value("-pdf","NNPDF30_nnlo_as_0118")
+    pdfname = cmdline.value("-pdf","MSHT20nnlo_as118")
     xmin=cmdline.value("-xmin",1e-4)
     xmax=cmdline.value("-xmax",1.0)
     nx=cmdline.value("-nx",100)
@@ -266,7 +266,7 @@ def main():
             pdfname,Q,pdfs[0].alphasQ(Q), pdfset.dataversion), file=out)
         header = "# Columns: x"
         for flav in flavList:
-            header += " flav({}) errsymm({})".format(flav,flav)
+            header += " x*flav({}) errsymm({})".format(flav,flav)
             if (fullerr): header += " bandlo({}) bandhi({})".format(flav,flav)
         print(header, file=out)
         print(reformat(xs, reserr, format=format), file=out)
@@ -286,7 +286,7 @@ def main():
             pdfname,imem, Q,pdf.alphasQ(Q), pdfset.dataversion), file=out)
         header = "# Columns: x"
         for flav in flavList:
-            header += " flav({})".format(flav)
+            header += " x*flav({})".format(flav)
         print(header, file=out)
         print(reformat(xs, res, format=format), file=out)
 

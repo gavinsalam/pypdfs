@@ -126,7 +126,7 @@ if (cmdline.present("-out")):
     out = open(outName,'w')
 
 #-- get basic parameters
-pdfname = cmdline.value("-pdf","NNPDF30_nnlo_as_0118")
+pdfname = cmdline.value("-pdf","MSHT20nnlo_as118")
 flav1=cmdline.value("-flav1",21)
 flav2=cmdline.value("-flav2",21)
 flv_string = None
