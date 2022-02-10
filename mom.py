@@ -12,7 +12,7 @@ from builtins import range
 from past.utils import old_div
 import sys
 import subprocess
-import hfile # you may need to add ../aux to your path to get it (cf below for lhapdfPath)
+#import hfile # you may need to add ../aux to your path to get it (cf below for lhapdfPath)
 import re
 import numpy as np
 import cmdline
@@ -142,7 +142,7 @@ if (err):
         if (fullerr): header += " bandlo({}) bandhi({})".format(flav,flav)
     if (fullerr): header += " bandlo bandhi"
     print(header, file=out)
-    print(hfile.reformat(Qvals, reserr, format='{:<12.5g}'), file=out)
+    print(mypdf.reformat(Qvals, reserr, format='{:<12.5g}'), file=out)
 
     if (doLaTeX):
         print("{:8s}".format("Q [GeV]"), end=' ', file=out)
@@ -168,7 +168,7 @@ else:
     for flav in flavList:
         header += " mom({}): central".format(flav)
     print(header, file=out)
-    print(hfile.reformat(Qvals, res, format='{:<12.5g}'), file=out)
+    print(mypdf.reformat(Qvals, res, format='{:<12.5g}'), file=out)
 
 
 def printInfo():

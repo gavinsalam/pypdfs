@@ -20,7 +20,6 @@ from __future__ import print_function
 from builtins import range
 import sys
 import subprocess
-import hfile # you may need to add ../aux to your path to get it (cf below for lhapdfPath)
 import re
 import numpy as np
 import cmdline
@@ -119,6 +118,8 @@ def lumi_description(flav1,flav2,flv_string):
     else:
         return 'lumi({})'.format(flv_string)
 
+
+
 #-- send output to a file if requested
 if (cmdline.present("-out")):
     outName = cmdline.value("-out")
@@ -207,7 +208,7 @@ if (err):
     header += " "+lumi_description(flav1,flav2,flv_string)+" : mean_or_median errsymm".format(flav1,flav2)
     if (fullerr): header += " bandlo bandhi"
     print(header, file=out)
-    print(hfile.reformat(masses, reserr, format='{:<13.6g}'), file=out)
+    print(mypdf.reformat(masses, reserr, format='{:<13.6g}'), file=out)
             
 else:
     pdf=pdfset.mkPDF(imem)
@@ -219,7 +220,7 @@ else:
     header = "# Columns: mass"
     header += " "+lumi_description(flav1,flav2,flv_string)+": central"
     print(header, file=out)
-    print(hfile.reformat(masses, res, format='{:<13.6g}'), file=out)
+    print(mypdf.reformat(masses, res, format='{:<13.6g}'), file=out)
 
 
 def printInfo():

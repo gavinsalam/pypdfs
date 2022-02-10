@@ -32,9 +32,10 @@ usage="""
 
 """
 
+import io
 import sys
 import subprocess
-import hfile # you may need to add ../aux to your path to get it (cf below for lhapdfPath)
+#import hfile # you may need to add ../aux to your path to get it (cf below for lhapdfPath)
 import re
 import numpy as np
 import cmdline
@@ -118,6 +119,55 @@ class intervalUncert(object):
         # apparently errminus is defined as positive in LHAPDF...
         self.errminus = self.central - percentile(percentile_lo, sorted_values)
         self.errsymm  = 0.5 * (self.errplus + abs(self.errminus))
+
+#----------------------------------------------------------------------
+def reformat(*columns, **keyw):
+  """returns a string containing each of the columns placed
+      side by side. If instead of columns, 2d numpy arrays
+      are supplied, then these are output sensibly too
+
+      For now, it assumes that columns are numpy arrays,
+      but this could in principle be relaxed.
+
+      Among the keyword arguments, the only one currently supported is
+      "format", which should be a string used to format the output
+
+  """
+
+  ncol = len(columns)
+  shapes = []
+  ncols  = []
+  for i in range(ncol):
+    shapes.append(columns[i].shape)
+    if    (len(shapes[i]) == 1): ncols.append(0)
+    elif  (len(shapes[i]) == 2): ncols.append(shapes[i][1])
+    else: raise Error(" a 'column' appears not to be 1 or 2-dimensional" )
+
+  # lazily assume that all lengths are the same
+  nlines = shapes[0][0]
+
+  #output = io.BytesIO()
+  output = io.StringIO()
+  if ("format" in keyw):
+    frm=keyw["format"]
+    
+    for i in range(nlines) :
+      for j in range(ncol):
+        if (ncols[j] == 0): print(frm.format(columns[j][i]), end=' ', file=output)    # trailing comma kills newline
+        else: 
+          for k in range (ncols[j]):
+            print(frm.format(columns[j][i,k]), end=' ', file=output)
+      print(file=output)
+  else:
+    for i in range(nlines) :
+      for j in range(ncol):
+        if (ncols[j] == 0): print(columns[j][i], end=' ', file=output)    # trailing comma kills newline
+        else: 
+          for k in range (ncols[j]):
+            print(columns[j][i,k], end=' ', file=output)
+      print(file=output)
+      
+  return output.getvalue()
 
 #----------------------------------------------------------------------        
 def main():
@@ -219,7 +269,7 @@ def main():
             header += " flav({}) errsymm({})".format(flav,flav)
             if (fullerr): header += " bandlo({}) bandhi({})".format(flav,flav)
         print(header, file=out)
-        print(hfile.reformat(xs, reserr, format=format), file=out)
+        print(reformat(xs, reserr, format=format), file=out)
                 
     else:
         pdf=pdfset.mkPDF(imem)
@@ -238,7 +288,7 @@ def main():
         for flav in flavList:
             header += " flav({})".format(flav)
         print(header, file=out)
-        print(hfile.reformat(xs, res, format=format), file=out)
+        print(reformat(xs, res, format=format), file=out)
 
     if (print_info): printInfo(pdfname)
 
