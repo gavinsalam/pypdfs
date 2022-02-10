@@ -7,7 +7,7 @@
 #
 # If F1/=F2, then the lumi includes a factor of 2 (i.e. 2*F1*F2)
 #
-# If "-eval STRING" is provided then STRING can contain expressions liks
+# If "-eval STRING" is provided then STRING can contain expressions like
 #    
 #    u1 * dbar2
 #    g1 * sigma2 (photon * all quarks)
