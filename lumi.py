@@ -27,7 +27,6 @@ from math import *
 import pdf as mypdf
 import lhapdf
 
-out = sys.stdout
 
 
 #----------------------------------------------------------------------
@@ -119,116 +118,119 @@ def lumi_description(flav1,flav2,flv_string):
         return 'lumi({})'.format(flv_string)
 
 
+def main():
 
-#-- send output to a file if requested
-if (cmdline.present("-out")):
-    outName = cmdline.value("-out")
-    out = open(outName,'w')
+    #-- send output to a file if requested
+    out = sys.stdout
+    if (cmdline.present("-out")):
+        outName = cmdline.value("-out")
+        out = open(outName,'w')
 
-#-- get basic parameters
-pdfname = cmdline.value("-pdf","MSHT20nnlo_as118")
-flav1=cmdline.value("-flav1",21)
-flav2=cmdline.value("-flav2",21)
-flv_string = None
-if (cmdline.present("-eval")): flv_string = cmdline.value("-eval")
-rts =cmdline.value("-rts",13000)
-mass_lo = cmdline.value("-mass-lo",125.0)
-mass_hi = cmdline.value("-mass-hi",rts/2.0)
-nmass = cmdline.value("-nmass",50)
-dy_min = cmdline.value("-dy-min",0.1)
+    #-- get basic parameters
+    pdfname = cmdline.value("-pdf","MSHT20nnlo_as118")
+    flav1=cmdline.value("-flav1",21)
+    flav2=cmdline.value("-flav2",21)
+    flv_string = None
+    if (cmdline.present("-eval")): flv_string = cmdline.value("-eval")
+    rts =cmdline.value("-rts",13000)
+    mass_lo = cmdline.value("-mass-lo",125.0)
+    mass_hi = cmdline.value("-mass-hi",rts/2.0)
+    nmass = cmdline.value("-nmass",50)
+    dy_min = cmdline.value("-dy-min",0.1)
 
-#nx=cmdline.value("-nx",100)
-#Q=cmdline.value("-Q", 100.0)
-#flavList=cmdline.value("-flav",'1').split(',')
-fullerr = cmdline.present("-fullerr")
-err = cmdline.present("-err") or fullerr
-if (not err):
-    imem = cmdline.value("-imem",0)
-else        :
-    imem = 0
-    medianerr = cmdline.present("-medianerr")
+    #nx=cmdline.value("-nx",100)
+    #Q=cmdline.value("-Q", 100.0)
+    #flavList=cmdline.value("-flav",'1').split(',')
+    fullerr = cmdline.present("-fullerr")
+    err = cmdline.present("-err") or fullerr
+    if (not err):
+        imem = cmdline.value("-imem",0)
+    else        :
+        imem = 0
+        medianerr = cmdline.present("-medianerr")
 
-print_info=cmdline.present("-info")
+    print_info=cmdline.present("-info")
 
-divide_by_M2 = cmdline.present("-divide-by-M2")
+    divide_by_M2 = cmdline.present("-divide-by-M2")
 
-mu = None
-if (cmdline.present("-mu")): mu = cmdline.value("-mu", return_type=float)
+    mu = None
+    if (cmdline.present("-mu")): mu = cmdline.value("-mu", return_type=float)
 
-cmdline.assert_all_options_used()
+    cmdline.assert_all_options_used()
 
-# now set up the pdf
-pdfset = lhapdf.getPDFSet(pdfname)
+    # now set up the pdf
+    pdfset = lhapdf.getPDFSet(pdfname)
 
-# make sure our lumi mass range is in the PDF range
-xMin = pdfset.mkPDF(imem).xMin
-mass_lo = max(mass_lo, sqrt(xMin) * rts)
-
-
-#======================================================================
-# now start with the output
-print("# "+cmdline.cmdline(), file=out)        
-
-# generate the masses
-masses=mass_lo*(mass_hi/mass_lo)**((1.0*np.arange(0,nmass))/(nmass-1))
-if (divide_by_M2): norm = 1/masses**2
-else             : norm = masses**0
+    # make sure our lumi mass range is in the PDF range
+    xMin = pdfset.mkPDF(imem).xMin
+    mass_lo = max(mass_lo, sqrt(xMin) * rts)
 
 
+    #======================================================================
+    # now start with the output
+    print("# "+cmdline.cmdline(), file=out)        
 
-if (err):
+    # generate the masses
+    masses=mass_lo*(mass_hi/mass_lo)**((1.0*np.arange(0,nmass))/(nmass-1))
+    if (divide_by_M2): norm = 1/masses**2
+    else             : norm = masses**0
 
-    resfull=np.empty([nmass,pdfset.size])
-    if (fullerr):
-        ncol=4
-    else:
-        ncol=2
-    reserr=np.empty([nmass,ncol])
 
-    pdfs = pdfset.mkPDFs()
-    for im,mass in enumerate(masses):
-        for ipdf,pdf in enumerate(pdfs):
-            resfull[im,ipdf] = norm[im] * lumi(pdf, mass, rts, flav1, flav2, flv_string, mu, dy_min)
-        if (medianerr):
-            uncert = mypdf.intervalUncert(resfull[im,:])
-        else:
-            uncert = pdfset.uncertainty(resfull[im,:])
 
-        # print(np.array2string(resfull[im,:],separator=','))
-        # print(np.average(resfull[im,1:]), resfull[im,0])
+    if (err):
 
-        reserr[im,0] = uncert.central
-        reserr[im,1] = uncert.errsymm
+        resfull=np.empty([nmass,pdfset.size])
         if (fullerr):
-            reserr[im,2] = uncert.central-abs(uncert.errminus)
-            reserr[im,3] = uncert.central+uncert.errplus
+            ncol=4
+        else:
+            ncol=2
+        reserr=np.empty([nmass,ncol])
 
-    print("# pdf = {}, version = {}, rts = {}".format(pdfname, pdfset.dataversion, rts), file=out)
-    header = "# Columns: mass"
-    header += " "+lumi_description(flav1,flav2,flv_string)+" : mean_or_median errsymm".format(flav1,flav2)
-    if (fullerr): header += " bandlo bandhi"
-    print(header, file=out)
-    print(mypdf.reformat(masses, reserr, format='{:<13.6g}'), file=out)
-            
-else:
-    pdf=pdfset.mkPDF(imem)
-    res=np.empty([nmass])
-    for im,mass in enumerate(masses):
-        res[im] = norm[im] * lumi(pdf, mass, rts, flav1, flav2, flv_string, mu, dy_min)
-    
-    print("# pdf = {}, imem = {}, version = {}, rts = {}".format(pdfname,imem, pdfset.dataversion, rts), file=out)
-    header = "# Columns: mass"
-    header += " "+lumi_description(flav1,flav2,flv_string)+": central"
-    print(header, file=out)
-    print(mypdf.reformat(masses, res, format='{:<13.6g}'), file=out)
+        pdfs = pdfset.mkPDFs()
+        for im,mass in enumerate(masses):
+            for ipdf,pdf in enumerate(pdfs):
+                resfull[im,ipdf] = norm[im] * lumi(pdf, mass, rts, flav1, flav2, flv_string, mu, dy_min)
+            if (medianerr):
+                uncert = mypdf.intervalUncert(resfull[im,:])
+            else:
+                uncert = pdfset.uncertainty(resfull[im,:])
 
+            # print(np.array2string(resfull[im,:],separator=','))
+            # print(np.average(resfull[im,1:]), resfull[im,0])
+
+            reserr[im,0] = uncert.central
+            reserr[im,1] = uncert.errsymm
+            if (fullerr):
+                reserr[im,2] = uncert.central-abs(uncert.errminus)
+                reserr[im,3] = uncert.central+uncert.errplus
+
+        print("# pdf = {}, version = {}, rts = {}".format(pdfname, pdfset.dataversion, rts), file=out)
+        header = "# Columns: mass"
+        header += " "+lumi_description(flav1,flav2,flv_string)+" : mean_or_median errsymm".format(flav1,flav2)
+        if (fullerr): header += " bandlo bandhi"
+        print(header, file=out)
+        print(mypdf.reformat(masses, reserr, format='{:<13.6g}'), file=out)
+
+    else:
+        pdf=pdfset.mkPDF(imem)
+        res=np.empty([nmass])
+        for im,mass in enumerate(masses):
+            res[im] = norm[im] * lumi(pdf, mass, rts, flav1, flav2, flv_string, mu, dy_min)
+
+        print("# pdf = {}, imem = {}, version = {}, rts = {}".format(pdfname,imem, pdfset.dataversion, rts), file=out)
+        header = "# Columns: mass"
+        header += " "+lumi_description(flav1,flav2,flv_string)+": central"
+        print(header, file=out)
+        print(mypdf.reformat(masses, res, format='{:<13.6g}'), file=out)
+
+    if (print_info): printInfo()
 
 def printInfo():
     # find out location of data
     lhapdfData = subprocess.Popen(["lhapdf-config", "--datadir"],
-                                  stdout=subprocess.PIPE).communicate()[0].rstrip()
+                                    stdout=subprocess.PIPE).communicate()[0].rstrip()
     print(subprocess.Popen(["cat", "{0}/{1}/{1}.info".format(lhapdfData,pdfname)],
-                                  stdout=subprocess.PIPE).communicate()[0], file=out)
+                                    stdout=subprocess.PIPE).communicate()[0], file=out)
 
-if (print_info): printInfo()
+if __name__ == '__main__': main()
 
