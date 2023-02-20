@@ -196,16 +196,21 @@ def main():
 
     x_from_file = cmdline.value("-x-from-file", "")
     
-    myEval= cmdline.value("-eval","")
-    if (myEval): print(myEval)
     
     # decide on precision of output
     prec=cmdline.value("-prec",5)
     format="{{:<{}.{}g}}".format(prec+7,prec)
-    
-    flavList=cmdline.value("-flav",'1').split(',')
+
+    myEval= cmdline.value("-eval","").split(',')
+    if (myEval): 
+        print(myEval)
+        flavList = myEval
+    else:
+        flavList=cmdline.value("-flav",'1').split(',')
+
     err = cmdline.present("-err")
     fullerr = cmdline.present("-fullerr")
+
     if (not err):
         imem = cmdline.value("-imem",0)
     else        :
@@ -248,7 +253,7 @@ def main():
         for ix,x in enumerate(xs):
             for iflav,flav in enumerate(flavList):
                 for ipdf,pdf in enumerate(pdfs):
-                    if (myEval): resfull[ix,iflav,ipdf] = eval(myEval)
+                    if (myEval): resfull[ix,iflav,ipdf] = eval(myEval[iflav])
                     else:        resfull[ix,iflav,ipdf] = pdf.xfxQ(int(flav), xs[ix], Q)
                 if (medianerr):
                     uncert = intervalUncert(resfull[ix,iflav,:])
@@ -278,7 +283,7 @@ def main():
         for ix,x in enumerate(xs):
             for iflav,flav in enumerate(flavList):
                 if (myEval):
-                    res[ix,iflav] = eval(myEval)
+                    res[ix,iflav] = eval(myEval[iflav])
                 else:
                     res[ix,iflav] = pdf.xfxQ(int(flav), x, Q)
         
