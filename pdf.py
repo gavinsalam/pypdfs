@@ -202,6 +202,7 @@ def main():
     format="{{:<{}.{}g}}".format(prec+7,prec)
 
     myEval= cmdline.value("-eval","").split(',')
+    if (myEval[0] == ""): myEval = None
     if (myEval): 
         print(myEval)
         flavList = myEval
