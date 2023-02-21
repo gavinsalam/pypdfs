@@ -27,10 +27,17 @@ from math import *
 import pdf as mypdf
 import lhapdf
 
-
+class Lumi(object):
+    def __init__(self):
+        self.dy     = None
+        self.dlumi  = None
+        self.x1vals = None
+        self.x2vals = None
+        self.yvals  = None
+        self.lumi   = None
 
 #----------------------------------------------------------------------
-def lumi(pdf, M, rts, iflav1, iflav2, flv_string=None, mu=None, dy_min = 0.1, ny_min = 100):
+def lumi(pdf, M, rts, iflav1, iflav2, flv_string=None, mu=None, dy_min = 0.1, ny_min = 100, return_Lumi=False):
     if (mu is None): mu = M
     tau = (M/rts)**2
     ymax = -log(tau)
@@ -38,6 +45,12 @@ def lumi(pdf, M, rts, iflav1, iflav2, flv_string=None, mu=None, dy_min = 0.1, ny
     # purposes
     ny = max(ny_min, int(ymax/dy_min))
     dy = ymax / ny
+
+    ll = Lumi()
+    ll.dy = dy
+    ll.x1vals = np.exp(-dy*np.arange(0,ny+1))
+    ll.x2vals = np.exp(-dy*(ny-np.arange(0,ny+1)))
+
 
     if (flv_string is None):
         pdf1 = np.zeros(ny+1)
@@ -47,12 +60,14 @@ def lumi(pdf, M, rts, iflav1, iflav2, flv_string=None, mu=None, dy_min = 0.1, ny
             pdf1[iy] = pdf.xfxQ(iflav1, x, mu)
             pdf2[iy] = pdf.xfxQ(iflav2, x, mu)
             
-            lumi = (pdf1[:] * pdf2[ny::-1]).sum() * dy
+        ll.dlumi = pdf1[:] * pdf2[ny::-1]
+        if (iflav1 != iflav2): ll.dlumi *= 2
+        ll.lumi = ll.dlumi.sum() * dy
+        #lumi = (pdf1[:] * pdf2[ny::-1]).sum() * dy
             
         # if the two flavours are not identical
         # then we need a factor of two to account for
         # f_{f1/p1} * f_{f2/p2} + f_{f2/p1} * f_{f1/p2}
-        if (iflav1 != iflav2): lumi *= 2
     else:
         # define a range of shorthands
         flv1 = lambda iflv: pdf.xfxQ(iflv, x1, mu)
@@ -98,17 +113,20 @@ def lumi(pdf, M, rts, iflav1, iflav2, flv_string=None, mu=None, dy_min = 0.1, ny
         flv_string_sub = re.sub(r'(qqbar)',r'\1()',flv_string_sub)
         flv_string_obj = compile(flv_string_sub, '/dev/stderr', mode='eval')
     
-        x1vals = np.exp(-dy*np.arange(0,ny+1))
-        x2vals = np.exp(-dy*(ny-np.arange(0,ny+1)))
         lumi = 0
+        ll.dlumi = np.zeros(ny+1)
         for iy in range(0,ny+1):
-            x1 = x1vals[iy]
-            x2 = x2vals[iy]
-            lumi = lumi + eval(flv_string_obj)
-            
-        lumi *= dy
+            x1 = ll.x1vals[iy]
+            x2 = ll.x2vals[iy]
+            ll.dlumi[iy] = eval(flv_string_obj)
+            #lumi = lumi + eval(flv_string_obj)
+
+        ll.lumi = ll.dlumi.sum() * dy            
+        #lumi *= dy
         
-    return lumi
+    if return_Lumi: return ll
+    else          : return ll.lumi
+    #return lumi
 
 #----------------------------------------------------------------------
 def lumi_description(flav1,flav2,flv_string):
