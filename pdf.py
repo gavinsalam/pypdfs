@@ -315,9 +315,11 @@ def get_x_from_file(filename):
 def printInfo(pdfname):
     # find out location of data
     lhapdfData = subprocess.Popen(["lhapdf-config", "--datadir"],
-                                  stdout=subprocess.PIPE).communicate()[0].rstrip()
-    print(subprocess.Popen(["cat", "{0}/{1}/{1}.info".format(lhapdfData,pdfname)],
-                                  stdout=subprocess.PIPE).communicate()[0], file=out)
+                                  stdout=subprocess.PIPE).communicate()[0].decode('utf-8').rstrip()
+    # read and print the file
+    with open("{0}/{1}/{1}.info".format(str(lhapdfData),pdfname),'r') as ff:
+        contents = ff.read()
+        print(contents)
 
 
 if __name__ == '__main__':
