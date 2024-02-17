@@ -183,7 +183,8 @@ def main():
     parser.add_argument('-nx', type=int, default=100, help='nx')
     parser.add_argument('-x-from-file', type=str, default="", help='Read x values from file')
 
-
+    parser.add_argument("-Qmin", type=float, default=0.0, help="Minimum Q value (if non-zero, overrides Q; typically one would then set xmin=xmax)")
+    parser.add_argument("-Qmax", type=float, default=0.0, help="Maximum Q value (if non-zero, overrides Q; typically one would then set xmin=xmax)")
 
     parser.add_argument('-flav', type=str, default='1', help='Comma-separated list of PDG IDs of flavours to print')
     parser.add_argument('-eval', type=str, default="", help='Evaluation string, e.v. flv(1)+flv(-1) to get d+dbar')
@@ -200,6 +201,10 @@ def main():
     args = parser.parse_args()
     pdfname = args.pdf
     Q = args.Q
+
+    if (args.Qmin == 0.0): args.Qmin = Q
+    if (args.Qmax == 0.0): args.Qmax = Q
+
     xmin = args.xmin
     xmax = args.xmax
     nx = args.nx
@@ -231,44 +236,6 @@ def main():
     else:
         out = sys.stdout
     
-#    #-- get basic parameters
-#    pdfname = cmdline.value("-pdf","MSHT20nnlo_as118")
-#    xmin=cmdline.value("-xmin",1e-4)
-#    xmax=cmdline.value("-xmax",1.0)
-#    nx=cmdline.value("-nx",100)
-#    # allow both -Q and -Q2 options
-#    Q=cmdline.value("-Q", 100.0)
-#    Q = sqrt(cmdline.value("-Q2",Q**2))
-#
-#    a_stretch = cmdline.value("-a-stretch", a_stretch)
-#
-#    x_from_file = cmdline.value("-x-from-file", "")
-#    
-#    
-#    # decide on precision of output
-#    prec=cmdline.value("-prec",5)
-#    format="{{:<{}.{}g}}".format(prec+7,prec)
-#
-#    myEval= cmdline.value("-eval","").split(',')
-#    if (myEval[0] == ""): myEval = None
-#    if (myEval): 
-#        print(myEval)
-#        flavList = myEval
-#    else:
-#        flavList=cmdline.value("-flav",'1').split(',')
-#
-#    err = cmdline.present("-err")
-#    fullerr = cmdline.present("-fullerr")
-#
-#    if (not err):
-#        imem = cmdline.value("-imem",0)
-#    else        :
-#        imem = 0
-#        medianerr = cmdline.present("-medianerr")
-#    
-#    print_info=cmdline.present("-info")
-#    
-#    cmdline.assert_all_options_used()
     
     # now set up the pdf
     pdfset = lhapdf.getPDFSet(pdfname)
@@ -282,13 +249,38 @@ def main():
         nx = len(xs)
     else:
         xs=np.empty([nx])
+        Qs = np.logspace(log10(args.Qmin), log10(args.Qmax), nx)
         #for ix in range(0,nx): xs[ix] = xmin*(xmax/xmin)**((1.0*ix)/(nx-1))
         zetamin=zeta_of_x(xmin)
         zetamax=zeta_of_x(xmax)
-        for ix in range(0,nx): xs[ix] = x_of_zeta(zetamin + (zetamax-zetamin)*((1.0*ix)/(nx-1)))
+        for ix in range(0,nx): xs[ix] = x_of_zeta(zetamin + (zetamax-zetamin)*((1.0*ix)/max(1,nx-1)))
     
-    flv = lambda iflav: pdf.xfxQ(int(iflav), xs[ix], Q)
+
+    if args.err:
+        pdfs = pdfset.mkPDFs()
+        pdf = pdfs[0]
+    else:
+        pdf = pdfset.mkPDF(imem)
+
+    #-- print the header
+    if args.Qmin == args.Qmax:
+        print("# pdf = {}, Q = {}, alphas(Q) = {}, version = {}".format(
+            pdfname,Q,pdf.alphasQ(Q), pdfset.dataversion), file=out)
+        header = "# Columns: x"
+    else:
+        print("# pdf = {}, Qmin = {}, Qmax = {}, alphas(Qmin) = {}, version = {}".format(
+            pdfname,args.Qmin,args.Qmax,pdf.alphasQ(args.Qmin), pdfset.dataversion), file=out)
+        header = "# Columns: x Q"
+    for flav in flavList:
+        if (args.err):
+            header += " x*flav({}) errsymm({})".format(flav,flav)
+            if (args.fullerr): header += " bandlo({}) bandhi({})".format(flav,flav)
+        else:
+            header += " x*flav({})".format(flav)
+    print(header, file=out)
+
     # and the x points
+    flv = lambda iflav: pdf.xfxQ(int(iflav), xs[ix], Qs[ix])
     if (args.err):
     
         resfull=np.empty([nx,len(flavList),pdfset.size])
@@ -298,12 +290,11 @@ def main():
             ncol=2
         reserr=np.empty([nx,ncol*len(flavList)])
     
-        pdfs = pdfset.mkPDFs()
         for ix,x in enumerate(xs):
             for iflav,flav in enumerate(flavList):
                 for ipdf,pdf in enumerate(pdfs):
                     if (myEval): resfull[ix,iflav,ipdf] = eval(myEval[iflav])
-                    else:        resfull[ix,iflav,ipdf] = pdf.xfxQ(int(flav), xs[ix], Q)
+                    else:        resfull[ix,iflav,ipdf] = pdf.xfxQ(int(flav), xs[ix], Qs[ix])
                 if (args.medianerr):
                     uncert = intervalUncert(resfull[ix,iflav,:])
                     reserr[ix,iflav*ncol  ] = uncert.central
@@ -316,33 +307,25 @@ def main():
                     reserr[ix,iflav*ncol+2] = uncert.central-abs(uncert.errminus)
                     reserr[ix,iflav*ncol+3] = uncert.central+uncert.errplus
 
-        print("# pdf = {}, Q = {}, alphas(Q) = {}, version = {}".format(
-            pdfname,Q,pdfs[0].alphasQ(Q), pdfset.dataversion), file=out)
-        header = "# Columns: x"
-        for flav in flavList:
-            header += " x*flav({}) errsymm({})".format(flav,flav)
-            if (fullerr): header += " bandlo({}) bandhi({})".format(flav,flav)
-        print(header, file=out)
-        print(reformat(xs, reserr, format=format), file=out)
-                
+        if args.Qmin == args.Qmax:
+            print(reformat(xs, reserr, format=format), file=out)
+        else:
+            print(reformat(xs, Qs, reserr, format=format), file=out)   
     else:
-        pdf=pdfset.mkPDF(imem)
         res=np.empty([nx,len(flavList)])
         print("", file=out)
         for ix,x in enumerate(xs):
+            Q = Qs[ix]
             for iflav,flav in enumerate(flavList):
                 if (myEval):
                     res[ix,iflav] = eval(myEval[iflav])
                 else:
                     res[ix,iflav] = pdf.xfxQ(int(flav), x, Q)
         
-        print("# pdf = {}, imem = {}, Q = {}, alphas(Q) = {}, version = {}".format(
-            pdfname,imem, Q,pdf.alphasQ(Q), pdfset.dataversion), file=out)
-        header = "# Columns: x"
-        for flav in flavList:
-            header += " x*flav({})".format(flav)
-        print(header, file=out)
-        print(reformat(xs, res, format=format), file=out)
+        if args.Qmin == args.Qmax:
+            print(reformat(xs, res, format=format), file=out)
+        else:
+            print(reformat(xs, Qs, res, format=format), file=out)   
 
     if (print_info): printInfo(pdfname)
 
