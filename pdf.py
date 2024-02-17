@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from builtins import range
 from builtins import object
+import argparse
 
 usage="""
   Usage:    ./pdf.py [-h] [options]
@@ -150,7 +151,7 @@ def reformat(*columns, **keyw):
   output = io.StringIO()
   if ("format" in keyw):
     frm=keyw["format"]
-    
+
     for i in range(nlines) :
       for j in range(ncol):
         if (ncols[j] == 0): print(frm.format(columns[j][i]), end=' ', file=output)    # trailing comma kills newline
@@ -171,56 +172,103 @@ def reformat(*columns, **keyw):
 
 #----------------------------------------------------------------------        
 def main():
+    global a_stretch
 
-    if (cmdline.present("-h")):
-        print(usage)
-        sys.exit(0)
+    parser = argparse.ArgumentParser(description='Print out some aspect of a PDF')
+    parser.add_argument('-pdf', type=str, default="MSHT20nnlo_as118", help='PDF name')
+
+    parser.add_argument('-Q', type=float, default=100.0, help='Q')    
+    parser.add_argument('-xmin', type=float, default=1e-4, help='xmin')
+    parser.add_argument('-xmax', type=float, default=1.0, help='xmax')
+    parser.add_argument('-nx', type=int, default=100, help='nx')
+    parser.add_argument('-x-from-file', type=str, default="", help='Read x values from file')
+
+
+
+    parser.add_argument('-flav', type=str, default='1', help='Comma-separated list of PDG IDs of flavours to print')
+    parser.add_argument('-eval', type=str, default="", help='Evaluation string, e.v. flv(1)+flv(-1) to get d+dbar')
+    parser.add_argument('-a-stretch', type=float, default=a_stretch, help='Stretching of large-x region')
+    parser.add_argument('-imem', type=int, default=0, help='The member to examine')
+    parser.add_argument('-err', action='store_true', help='Output the symm err')
+    parser.add_argument('-fullerr', action='store_true', help='Output the full error info')
+    parser.add_argument('-medianerr', action='store_true', help='use a median + interval uncertainty')
+    parser.add_argument('-out', type=str, default="", help='Output file')
+    parser.add_argument('-info', action='store_true', help='Print info')
+    parser.add_argument('-prec', type=int, default=5, help='Precision')
+
+    # transfer arguments to local variables
+    args = parser.parse_args()
+    pdfname = args.pdf
+    Q = args.Q
+    xmin = args.xmin
+    xmax = args.xmax
+    nx = args.nx
+    x_from_file = args.x_from_file
+    #global a_stretch
+    a_stretch = args.a_stretch
+    imem = args.imem
+
+    format="{{:<{}.{}g}}".format(args.prec+7,args.prec)
+
+    flav = args.flav
+    myEval = args.eval.split(',')
+    if (myEval[0] != ""): 
+        flavList = myEval
+    else:
+        flavList = flav.split(',')
+        myEval = None
+
+    print_info = args.info
+
+    # if (cmdline.present("-h")):
+    #     print(usage)
+    #     sys.exit(0)
     
     #-- send output to a file if requested
-    if (cmdline.present("-out")):
+    if (args.out != ""):
         outName = cmdline.value("-out")
         out = open(outName,'w')
     else:
         out = sys.stdout
     
-    #-- get basic parameters
-    pdfname = cmdline.value("-pdf","MSHT20nnlo_as118")
-    xmin=cmdline.value("-xmin",1e-4)
-    xmax=cmdline.value("-xmax",1.0)
-    nx=cmdline.value("-nx",100)
-    # allow both -Q and -Q2 options
-    Q=cmdline.value("-Q", 100.0)
-    Q = sqrt(cmdline.value("-Q2",Q**2))
-    global a_stretch
-    a_stretch = cmdline.value("-a-stretch", a_stretch)
-
-    x_from_file = cmdline.value("-x-from-file", "")
-    
-    
-    # decide on precision of output
-    prec=cmdline.value("-prec",5)
-    format="{{:<{}.{}g}}".format(prec+7,prec)
-
-    myEval= cmdline.value("-eval","").split(',')
-    if (myEval[0] == ""): myEval = None
-    if (myEval): 
-        print(myEval)
-        flavList = myEval
-    else:
-        flavList=cmdline.value("-flav",'1').split(',')
-
-    err = cmdline.present("-err")
-    fullerr = cmdline.present("-fullerr")
-
-    if (not err):
-        imem = cmdline.value("-imem",0)
-    else        :
-        imem = 0
-        medianerr = cmdline.present("-medianerr")
-    
-    print_info=cmdline.present("-info")
-    
-    cmdline.assert_all_options_used()
+#    #-- get basic parameters
+#    pdfname = cmdline.value("-pdf","MSHT20nnlo_as118")
+#    xmin=cmdline.value("-xmin",1e-4)
+#    xmax=cmdline.value("-xmax",1.0)
+#    nx=cmdline.value("-nx",100)
+#    # allow both -Q and -Q2 options
+#    Q=cmdline.value("-Q", 100.0)
+#    Q = sqrt(cmdline.value("-Q2",Q**2))
+#
+#    a_stretch = cmdline.value("-a-stretch", a_stretch)
+#
+#    x_from_file = cmdline.value("-x-from-file", "")
+#    
+#    
+#    # decide on precision of output
+#    prec=cmdline.value("-prec",5)
+#    format="{{:<{}.{}g}}".format(prec+7,prec)
+#
+#    myEval= cmdline.value("-eval","").split(',')
+#    if (myEval[0] == ""): myEval = None
+#    if (myEval): 
+#        print(myEval)
+#        flavList = myEval
+#    else:
+#        flavList=cmdline.value("-flav",'1').split(',')
+#
+#    err = cmdline.present("-err")
+#    fullerr = cmdline.present("-fullerr")
+#
+#    if (not err):
+#        imem = cmdline.value("-imem",0)
+#    else        :
+#        imem = 0
+#        medianerr = cmdline.present("-medianerr")
+#    
+#    print_info=cmdline.present("-info")
+#    
+#    cmdline.assert_all_options_used()
     
     # now set up the pdf
     pdfset = lhapdf.getPDFSet(pdfname)
@@ -241,10 +289,10 @@ def main():
     
     flv = lambda iflav: pdf.xfxQ(int(iflav), xs[ix], Q)
     # and the x points
-    if (err):
+    if (args.err):
     
         resfull=np.empty([nx,len(flavList),pdfset.size])
-        if (fullerr):
+        if (args.fullerr):
             ncol=4
         else:
             ncol=2
@@ -256,7 +304,7 @@ def main():
                 for ipdf,pdf in enumerate(pdfs):
                     if (myEval): resfull[ix,iflav,ipdf] = eval(myEval[iflav])
                     else:        resfull[ix,iflav,ipdf] = pdf.xfxQ(int(flav), xs[ix], Q)
-                if (medianerr):
+                if (args.medianerr):
                     uncert = intervalUncert(resfull[ix,iflav,:])
                     reserr[ix,iflav*ncol  ] = uncert.central
                 else:
@@ -264,7 +312,7 @@ def main():
                     reserr[ix,iflav*ncol  ] = resfull[ix,iflav,0]
     
                 reserr[ix,iflav*ncol+1] = uncert.errsymm
-                if (fullerr):
+                if (args.fullerr):
                     reserr[ix,iflav*ncol+2] = uncert.central-abs(uncert.errminus)
                     reserr[ix,iflav*ncol+3] = uncert.central+uncert.errplus
 
