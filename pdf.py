@@ -180,22 +180,23 @@ def main():
     parser.add_argument('-Q', type=float, default=100.0, help='Q')    
     parser.add_argument('-xmin', type=float, default=1e-4, help='xmin')
     parser.add_argument('-xmax', type=float, default=1.0, help='xmax')
-    parser.add_argument('-nx', type=int, default=100, help='nx')
+    parser.add_argument('-nx', type=int, default=100, help='number of x values to print out (of Q values if used with -Qmin and -Qmax)')
     parser.add_argument('-x-from-file', type=str, default="", help='Read x values from file')
 
     parser.add_argument("-Qmin", type=float, default=0.0, help="Minimum Q value (if non-zero, overrides Q; typically one would then set xmin=xmax)")
     parser.add_argument("-Qmax", type=float, default=0.0, help="Maximum Q value (if non-zero, overrides Q; typically one would then set xmin=xmax)")
 
-    parser.add_argument('-flav', type=str, default='1', help='Comma-separated list of PDG IDs of flavours to print')
+    parser.add_argument('-flav', '-flv', type=str, default='1', 
+                         help='Comma-separated list of PDG IDs of flavours to print (if the first one is negative do e.g. -flav=-1,1)')
     parser.add_argument('-eval', type=str, default="", help='Evaluation string, e.v. flv(1)+flv(-1) to get d+dbar')
     parser.add_argument('-a-stretch', type=float, default=a_stretch, help='Stretching of large-x region')
     parser.add_argument('-imem', type=int, default=0, help='The member to examine')
     parser.add_argument('-err', action='store_true', help='Output the symm err')
     parser.add_argument('-fullerr', action='store_true', help='Output the full error info')
     parser.add_argument('-medianerr', action='store_true', help='use a median + interval uncertainty')
-    parser.add_argument('-out', type=str, default="", help='Output file')
-    parser.add_argument('-info', action='store_true', help='Print info')
-    parser.add_argument('-prec', type=int, default=5, help='Precision')
+    parser.add_argument('-out', type=str, default="", help='Output file (default is stdout)')
+    parser.add_argument('-info', action='store_true', help='Include the contents of the PDF info file in the output')
+    parser.add_argument('-prec', type=int, default=5, help='Number of digits of precision in printout (default 5)')
 
     # transfer arguments to local variables
     args = parser.parse_args()
