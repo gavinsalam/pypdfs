@@ -177,7 +177,9 @@ def main():
     parser = argparse.ArgumentParser(description='Print out some aspect of a PDF')
     parser.add_argument('-pdf', type=str, default="MSHT20nnlo_as118", help='PDF name')
 
-    parser.add_argument('-Q', type=float, default=100.0, help='Q')    
+    parser.add_argument('-Q','-muF', type=float, default=100.0, help='Q')    
+    parser.add_argument('-lnQ','-lnmuF', type=float, default=None, help='lnQ (overrides -Q)')
+    
     parser.add_argument('-xmin', type=float, default=1e-4, help='xmin')
     parser.add_argument('-xmax', type=float, default=1.0, help='xmax')
     parser.add_argument('-nx', type=int, default=100, help='number of x values to print out (of Q values if used with -Qmin and -Qmax)')
@@ -202,6 +204,7 @@ def main():
     args = parser.parse_args()
     pdfname = args.pdf
     Q = args.Q
+    if args.lnQ is not None: Q = exp(args.lnQ)
 
     if (args.Qmin == 0.0): args.Qmin = Q
     if (args.Qmax == 0.0): args.Qmax = Q
