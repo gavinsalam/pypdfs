@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import division
 from __future__ import print_function
 from builtins import range
 from builtins import object
 import argparse
+from pdf_base import *
 
 usage="""
   Usage:    ./pdf.py [-h] [options]
@@ -35,20 +36,11 @@ usage="""
 
 import io
 import sys
-import subprocess
 #import hfile # you may need to add ../aux to your path to get it (cf below for lhapdfPath)
 import re
 import numpy as np
 import cmdline
 from math import *
-# figure out where lhapdf's python package is hiding
-lhapdfPath = str(subprocess.Popen(["lhapdf-config", "--prefix"],
-                            stdout=subprocess.PIPE).communicate()[0].rstrip())
-lhapdfPath += "/lib/python{}.{}/site-packages".format(sys.version_info[0],sys.version_info[1])
-# include it in the python path
-sys.path = [lhapdfPath] + sys.path
-#sys.path.append(lhapdfPath)
-import lhapdf
 
 out = sys.stdout
 
@@ -176,26 +168,26 @@ def main():
 
     parser = argparse.ArgumentParser(description='Print out some aspect of a PDF')
     parser.add_argument('-pdf', type=str, default="MSHT20nnlo_as118", help='PDF name')
+    parser.add_argument('-imem', type=int, default=0, help='The member to examine')
+    parser.add_argument('-err', action='store_true', help='Output the symm err')
+    parser.add_argument('-fullerr', action='store_true', help='Output the full error info')
+    parser.add_argument('-medianerr', action='store_true', help='use a median + interval uncertainty')
 
     parser.add_argument('-Q','-muF', type=float, default=100.0, help='Q')    
     parser.add_argument('-lnQ','-lnmuF', type=float, default=None, help='lnQ (overrides -Q)')
+    parser.add_argument("-Qmin", type=float, default=0.0, help="Minimum Q value (if non-zero, overrides Q; typically one would then set xmin=xmax)")
+    parser.add_argument("-Qmax", type=float, default=0.0, help="Maximum Q value (if non-zero, overrides Q; typically one would then set xmin=xmax)")
     
     parser.add_argument('-xmin', type=float, default=1e-4, help='xmin')
     parser.add_argument('-xmax', type=float, default=1.0, help='xmax')
     parser.add_argument('-nx', type=int, default=100, help='number of x values to print out (of Q values if used with -Qmin and -Qmax)')
     parser.add_argument('-x-from-file', type=str, default="", help='Read x values from file')
-
-    parser.add_argument("-Qmin", type=float, default=0.0, help="Minimum Q value (if non-zero, overrides Q; typically one would then set xmin=xmax)")
-    parser.add_argument("-Qmax", type=float, default=0.0, help="Maximum Q value (if non-zero, overrides Q; typically one would then set xmin=xmax)")
+    parser.add_argument('-a-stretch', type=float, default=a_stretch, help='Stretching of large-x region')
 
     parser.add_argument('-flav', '-flv', type=str, default='1', 
                          help='Comma-separated list of PDG IDs of flavours to print (if the first one is negative do e.g. -flav=-1,1)')
     parser.add_argument('-eval', type=str, default="", help='Evaluation string, e.v. flv(1)+flv(-1) to get d+dbar')
-    parser.add_argument('-a-stretch', type=float, default=a_stretch, help='Stretching of large-x region')
-    parser.add_argument('-imem', type=int, default=0, help='The member to examine')
-    parser.add_argument('-err', action='store_true', help='Output the symm err')
-    parser.add_argument('-fullerr', action='store_true', help='Output the full error info')
-    parser.add_argument('-medianerr', action='store_true', help='use a median + interval uncertainty')
+
     parser.add_argument('-out', type=str, default="", help='Output file (default is stdout)')
     parser.add_argument('-info', action='store_true', help='Include the contents of the PDF info file in the output')
     parser.add_argument('-prec', type=int, default=5, help='Number of digits of precision in printout (default 5)')
@@ -346,15 +338,6 @@ def get_x_from_file(filename):
             xlist.append(float(values[0]))
     return np.array(xlist)
 
-#----------------------------------------------------------------------
-def printInfo(pdfname):
-    # find out location of data
-    lhapdfData = subprocess.Popen(["lhapdf-config", "--datadir"],
-                                  stdout=subprocess.PIPE).communicate()[0].decode('utf-8').rstrip()
-    # read and print the file
-    with open("{0}/{1}/{1}.info".format(str(lhapdfData),pdfname),'r') as ff:
-        contents = ff.read()
-        print(contents)
 
 
 if __name__ == '__main__':
