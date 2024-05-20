@@ -9,7 +9,7 @@ To view a specific pdf flavour and its uncertainty for a fixed
 factorisation scale (Q), as a function of x:
 
 ```
-./pdf.py -pdf MSHT20nnlo_as118 -flav 4 -err -Q 200.0
+./pdf.py -pdf MSHT20nnlo_as118 -flav=-4 -err -Q 200.0
 ```
 
 To view a partonic luminosity (u*ubar) as a function of the invariant
@@ -27,4 +27,11 @@ factorisation scale Q
 
 ```
 ./mom.py -pdf MSHT20nnlo_as118 -flav 21
+```
+
+Sometimes when investigating issues in a PDF it's useful to examine the
+initial condition, which can be done with 
+
+```
+./read_lhapdf.py -pdf MSHT20nnlo_as118 [-flav 21]
 ```
