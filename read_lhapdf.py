@@ -21,6 +21,8 @@ def main():
     parser = argparse.ArgumentParser(description='Read LHAPDF file and print out the initial condition')
     parser.add_argument('-pdf', type=str, dest="pdfset", help='PDF set name')
     parser.add_argument("-flav", "--flav", default=0, type=int, help="Flavour index (default of 0 prints all flavours)")
+    parser.add_argument("-iQ", default=0, type=int, help="Index in Q to print in each block")
+    parser.add_argument("-block", type=int, help="if present, print only the specified Q block")
 
     args = parser.parse_args()
     print(args.pdfset)
@@ -34,33 +36,42 @@ def main():
         info = yaml.safe_load(stream)
         print("#", info.keys())
 
-    data_file = f'{pdf_dir}/{args.pdfset}_0000.dat'
+    data_file = f'{pdf_dir}/{args.pdfset}_0000.dat'    
     with open(data_file, 'r') as stream:
-        for i in range(3): stream.readline()
+        
+        iblock = -1
+        while True:
+            line = stream.readline()
+            if line.strip() == "": break
+            if not line.startswith("---"): continue
 
-        # get the x, muF and flav arrays
-        x_values = np.array(list(map(float, stream.readline().split())))
-        #print("# x_values = ", x_values)
-        muF_values = np.array(list(map(float, stream.readline().split())))
-        print("# muF_values = ", muF_values)
-        flavs = np.array(list(map(int, stream.readline().split())))
-        print("# flavs = ", flavs)
+            iblock += 1
+            if args.block is not None and iblock != args.block: continue
 
-        tabulation = np.zeros((len(x_values), len(flavs), len(muF_values)))
-        flavmap = dict(zip(flavs, range(len(flavs))))
-        #print("# flavmap = ", flavmap)
-        print("# tabulation.shape = ", tabulation.shape)
-        for ix in range(len(x_values)):
-            for imu in range(len(muF_values)):
-                tabulation[ix, :, imu] = np.array(list(map(float, stream.readline().split())))
+            # get the x, muF and flav arrays
+            x_values = np.array(list(map(float, stream.readline().split())))
+            if (len(x_values) == 0): break
+            #print("# x_values = ", x_values)
+            muF_values = np.array(list(map(float, stream.readline().split())))
+            print("# muF_values = ", muF_values)
+            flavs = np.array(list(map(int, stream.readline().split())))
+            print("# flavs = ", flavs)
 
-        print(f"# initial condition at muF={muF_values[0]}: ", end="")
-        if args.flav == 0:
-            print(f"x {[iflv for iflv in flavs]}")
-            print(h.reformat(x_values, *[tabulation[:,iflv,0] for iflv in range(len(flavs))]))
-        else:
-            print(f"x {args.flav}")
-            print(h.reformat(x_values, tabulation[:,flavmap[args.flav],0]))
+            tabulation = np.zeros((len(x_values), len(flavs), len(muF_values)))
+            flavmap = dict(zip(flavs, range(len(flavs))))
+            #print("# flavmap = ", flavmap)
+            print("# tabulation.shape = ", tabulation.shape)
+            for ix in range(len(x_values)):
+                for imu in range(len(muF_values)):
+                    tabulation[ix, :, imu] = np.array(list(map(float, stream.readline().split())))
+
+            print(f"# tabulated PDF at muF={muF_values[args.iQ]}: ", end="")
+            if args.flav == 0:
+                print(f"x {[iflv for iflv in flavs]}")
+                print(h.reformat(x_values, *[tabulation[:,iflv,args.iQ] for iflv in range(len(flavs))]))
+            else:
+                print(f"x {args.flav}")
+                print(h.reformat(x_values, tabulation[:,flavmap[args.flav],args.iQ]))
 
 if __name__ == '__main__':
     main()
