@@ -4,6 +4,7 @@ from __future__ import print_function
 from builtins import range
 from builtins import object
 import argparse
+import sys
 from pdf_base import *
 
 usage="""
@@ -39,7 +40,6 @@ import sys
 #import hfile # you may need to add ../aux to your path to get it (cf below for lhapdfPath)
 import re
 import numpy as np
-import cmdline
 from math import *
 
 out = sys.stdout
@@ -220,14 +220,10 @@ def main():
         myEval = None
 
     print_info = args.info
-
-    # if (cmdline.present("-h")):
-    #     print(usage)
-    #     sys.exit(0)
     
     #-- send output to a file if requested
     if (args.out != ""):
-        outName = cmdline.value("-out")
+        outName = args.out
         out = open(outName,'w')
     else:
         out = sys.stdout
@@ -237,7 +233,7 @@ def main():
     pdfset = lhapdf.getPDFSet(pdfname)
     #pdf=lhapdf.mkPDF(pdfname, 0)
     
-    print("# "+cmdline.cmdline(), file=out)        
+    print("# "+" ".join(sys.argv), file=out)        
     
     # decide which x points to use
     if (x_from_file != ""):
