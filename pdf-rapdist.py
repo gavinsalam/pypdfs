@@ -3,6 +3,7 @@
 import argparse
 from pdf_base import *
 import lumi
+import numpy as np
 
 def main():
     parser = argparse.ArgumentParser(description='Print the lumi-derived rapidity distribution')
@@ -40,10 +41,32 @@ def main():
 
     print("#", " ".join(sys.argv), file=out)
     print(f"# pdf = {pdfname}, imem = {args.imem}, rts = {args.rts}, mass = {args.mass}, pdf_version = {pdfset.dataversion}", file=out)
-    print(f"# rapidity", lumi.lumi_description(args.flav1,args.flav2,args.eval), file=out)
 
-    lumi_res = lumi.lumi(pdf, args.mass, args.rts, args.flav1, args.flav2, args.eval, return_Lumi=True)
-    print(reformat(lumi_res.yvals[::-1], lumi_res.dlumi[::-1], format=format), file=out)
+    if not args.err:
+        lumi_res = lumi.lumi(pdf, args.mass, args.rts, args.flav1, args.flav2, args.eval, return_Lumi=True)
+        print(f"# rapidity", lumi.lumi_description(args.flav1,args.flav2,args.eval), file=out)
+        print(reformat(lumi_res.yvals[::-1], lumi_res.dlumi[::-1], format=format), file=out)
+    else:
+        all_lumi_res = []
+        for imem in range(pdfset.size):
+            pdf = pdfs[imem]
+            lumi_res = \
+                lumi.lumi(pdf, args.mass, args.rts, args.flav1, args.flav2, args.eval, return_Lumi=True)
+        
+            if imem == 0: 
+                yvals = lumi_res.yvals
+                all_lumi_res = np.empty((len(yvals), pdfset.size))
+            all_lumi_res[:,imem] = lumi_res.dlumi
+        
+        lumi_res = np.empty((len(yvals)))
+        lumi_err = np.empty((len(yvals)))
+        for iy in range(len(yvals)):
+            uncert = pdfset.uncertainty(all_lumi_res[iy,:])
+            lumi_res[iy] = uncert.central
+            lumi_err[iy] = uncert.errsymm
+
+        print(f"# rapidity", lumi.lumi_description(args.flav1,args.flav2,args.eval), "errsymm", file=out)
+        print(reformat(yvals[::-1], lumi_res[::-1], lumi_err[::-1], format=format), file=out)
 
 
 if __name__ == '__main__': main()
