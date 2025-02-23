@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Usage:
 #
@@ -9,7 +9,6 @@
 from __future__ import division
 from __future__ import print_function
 from builtins import range
-from past.utils import old_div
 import sys
 import subprocess
 #import hfile # you may need to add ../aux to your path to get it (cf below for lhapdfPath)
@@ -42,8 +41,8 @@ def mom(pdf, Q, iflav, xmin = None):
     # purposes
     dy_min = 0.1
     ny_min = 100
-    ny = max(ny_min, int(old_div(ymax,dy_min)))
-    dy = old_div(ymax, ny)
+    ny = max(ny_min, int(ymax/dy_min))
+    dy = ymax/ny
     flv = lambda iflav: pdf.xfxQ(int(iflav), x, Q)
     
     x_pdf = np.zeros(ny+1)
@@ -107,7 +106,7 @@ Q_lo = max(Q_lo, QMin)
 print("# "+cmdline.cmdline(), file=out)        
 
 # generate the Qvals
-Qvals=Q_lo*(old_div(Q_hi,Q_lo))**(old_div((1.0*np.arange(0,nQ)),(max(1,nQ-1))))
+Qvals=Q_lo*(Q_hi/Q_lo)**((1.0*np.arange(0,nQ))/(max(1,nQ-1)))
 
 
 if (err):
