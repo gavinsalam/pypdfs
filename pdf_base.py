@@ -11,6 +11,7 @@ import io
 import lhapdf
 
 default_pdf = "MSHT20nnlo_as118"
+default_rts = 13600.0
 
 names = {
     1 : r"$d$",
@@ -89,3 +90,33 @@ def reformat(*columns, **keyw):
       print(file=output)
       
   return output.getvalue()
+
+#----------------------------------------------------------------------
+# a set of routines for getting percentile-based estimates -- not
+# optimally efficient because median and errsym both do a sort...
+def percentile(perc, sorted_values):
+    n = len(sorted_values) - 1
+    loc = n*perc
+    iloc = int(n*perc)
+    w2 = (loc-iloc)
+    w1 = 1.0 - w2
+    return sorted_values[iloc] * w1 + sorted_values[iloc + 1] * w2
+
+
+class intervalUncert(object):
+    """\
+    A structure that mirrors the PDFUncertainty class from LHAPDF, but using
+    interval-based uncertainties
+    """
+    def __init__(self,values):
+        n = len(values)
+        sorted_values = np.sort(values[1:])
+        self.central = percentile(0.50, sorted_values)
+        onesigma = 0.682689492137
+        percentile_lo = (1 - onesigma)/2.0
+        percentile_hi = 1 - percentile_lo
+        self.errplus  = percentile(percentile_hi, sorted_values) - self.central
+        # apparently errminus is defined as positive in LHAPDF...
+        self.errminus = self.central - percentile(percentile_lo, sorted_values)
+        self.errsymm  = 0.5 * (self.errplus + abs(self.errminus))
+

@@ -50,6 +50,7 @@ def lumi(pdf, M, rts, iflav1, iflav2, flv_string=None, mu=None, dy_min = 0.1, ny
     ll.dy = dy
     ll.x1vals = np.exp(-dy*np.arange(0,ny+1))
     ll.x2vals = np.exp(-dy*(ny-np.arange(0,ny+1)))
+    ll.yvals = 0.5 * np.log(ll.x1vals / ll.x2vals)
 
 
     if (flv_string is None):
