@@ -10,8 +10,9 @@ import subprocess
 import yaml
 import json
 import numpy as np
-import hfile as h
+from pdf_base import reformat, default_pdf
 from yaml import load
+
 
 # get the data directory as the output of lhapdf-config --datadir
 data_dir = str(subprocess.check_output(['lhapdf-config', '--datadir']),encoding="utf-8").strip()
@@ -19,7 +20,7 @@ data_dir = str(subprocess.check_output(['lhapdf-config', '--datadir']),encoding=
 def main():
 
     parser = argparse.ArgumentParser(description='Read LHAPDF file and print out the initial condition')
-    parser.add_argument('-pdf', type=str, dest="pdfset", help='PDF set name')
+    parser.add_argument('-pdf', type=str, default=default_pdf, dest="pdfset", help='PDF set name')
     parser.add_argument("-flav", "--flav", default=0, type=int, help="Flavour index (default of 0 prints all flavours)")
     parser.add_argument("-iQ", default=0, type=int, help="Index in Q to print in each block")
     parser.add_argument("-block", type=int, help="if present, print only the specified Q block")
@@ -68,10 +69,11 @@ def main():
             print(f"# tabulated PDF at muF={muF_values[args.iQ]}: ", end="")
             if args.flav == 0:
                 print(f"x {[iflv for iflv in flavs]}")
-                print(h.reformat(x_values, *[tabulation[:,iflv,args.iQ] for iflv in range(len(flavs))]))
+                print(reformat(x_values, *[tabulation[:,iflv,args.iQ] for iflv in range(len(flavs))]))
             else:
                 print(f"x {args.flav}")
-                print(h.reformat(x_values, tabulation[:,flavmap[args.flav],args.iQ]))
+                print(reformat(x_values, tabulation[:,flavmap[args.flav],args.iQ]))
+
 
 if __name__ == '__main__':
     main()

@@ -151,7 +151,7 @@ if (err):
         for iQ,Q in enumerate(Qvals):
             print("{:8.1f}".format(Q), end=' ', file=out)
             for iflav,flav in enumerate(flavList):
-                print("& ${:5.2f} \pm {:5.2f}$".format(100*reserr[iQ,iflav*ncol+0],
+                print(r"& ${:5.2f} \pm {:5.2f}$".format(100*reserr[iQ,iflav*ncol+0],
                                                               100*reserr[iQ,iflav*ncol+1]), end=' ', file=out)
             print(r"\\", file=out)
     
